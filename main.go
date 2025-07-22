@@ -302,7 +302,7 @@ func main() {
 	}
 
 	// APK file path - change this to your APK file path
-	apkPath := "./app.apk"
+	apkPath := "./hyperchat.apk"
 
 	// Home page
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -311,7 +311,7 @@ func main() {
 		var fileName, fileSize string
 
 		if err != nil {
-			fileName = "app.apk (file not found)"
+			fileName = "hyperchat.apk (file not found)"
 			fileSize = "Unknown"
 		} else {
 			fileName = fileInfo.Name()
