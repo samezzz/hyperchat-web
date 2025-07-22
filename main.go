@@ -209,7 +209,7 @@ const indexHTML = `
                     <line x1="12" y1="18" x2="12.01" y2="18"></line>
                 </svg>
             </div>
-            <h1 class="card-title">Download My App</h1>
+            <h1 class="card-title">Download Hyperchat 2.0</h1>
             <p class="card-description">Click the button below to download the latest version of the app.</p>
         </div>
         
