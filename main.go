@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -278,7 +277,7 @@ type PageData struct {
 func formatFileSize(size int64) string {
 	const unit = 1024
 	if size < unit {
-		return "63.5 MB"
+		return "63.6 MB"
 	}
 	div, exp := int64(unit), 0
 	for n := size / unit; n >= unit; n /= unit {
@@ -332,19 +331,7 @@ func main() {
 
 	// Download endpoint
 	r.Get("/download", func(w http.ResponseWriter, r *http.Request) {
-		// Check if file exists
-		if _, err := os.Stat(apkPath); os.IsNotExist(err) {
-			http.Error(w, "APK file not found", http.StatusNotFound)
-			return
-		}
-
-		// Set headers for file download
-		fileName := filepath.Base(apkPath)
-		w.Header().Set("Content-Disposition", "attachment; filename=\""+fileName+"\"")
-		w.Header().Set("Content-Type", "application/vnd.android.package-archive")
-
-		// Serve the file
-		http.ServeFile(w, r, apkPath)
+		http.Redirect(w, r, "https://drive.google.com/drive/folders/1q3ELPL61wIZ-FOHCptv8Cw7z5cR6W_UI", http.StatusFound)
 	})
 
 	// Health check
