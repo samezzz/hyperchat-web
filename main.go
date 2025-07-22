@@ -278,7 +278,7 @@ type PageData struct {
 func formatFileSize(size int64) string {
 	const unit = 1024
 	if size < unit {
-		return "< 1 KB"
+		return "63.5 KB"
 	}
 	div, exp := int64(unit), 0
 	for n := size / unit; n >= unit; n /= unit {
