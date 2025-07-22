@@ -25,7 +25,7 @@ WORKDIR /root/
 COPY --from=builder /app/main .
 
 # Copy your APK file
-COPY app.apk .
+COPY hyperchat.apk .
 
 # Expose port
 EXPOSE 8080
