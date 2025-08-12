@@ -269,6 +269,161 @@ const indexHTML = `
 </html>
 `
 
+// NEW: App opener HTML template
+const openAppHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opening HyperChat App...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .status {
+            margin: 20px 0;
+            font-size: 1.1rem;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        
+        .download-btn:hover {
+            background: #45a049;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🩺</div>
+        <h1>Opening HyperChat App...</h1>
+        
+        <div id="loading" class="status">
+            <div class="spinner"></div>
+            <p>Attempting to open the app...</p>
+        </div>
+        
+        <div id="fallback" class="status hidden">
+            <p>📱 App not installed or couldn't open?</p>
+            <a href="https://hyperchat.up.railway.app/" class="download-btn">
+                Download HyperChat App
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function tryOpenApp() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            
+            const deepLink = 'hyperchat://open';
+            const intentLink = 'intent://open#Intent;scheme=hyperchat;package=com.samess.hyperchat_app;S.browser_fallback_url=https%3A%2F%2Fhyperchat.up.railway.app%2F;end';
+            
+            let appOpened = false;
+            
+            if (/android/i.test(userAgent)) {
+                try {
+                    window.location.href = intentLink;
+                    appOpened = true;
+                } catch (e) {
+                    console.log('Intent failed, trying deep link');
+                    try {
+                        window.location.href = deepLink;
+                        appOpened = true;
+                    } catch (e2) {
+                        console.log('Deep link failed');
+                    }
+                }
+            } else {
+                try {
+                    window.location.href = deepLink;
+                    appOpened = true;
+                } catch (e) {
+                    console.log('Deep link failed');
+                }
+            }
+            
+            setTimeout(() => {
+                if (!appOpened || !document.hidden) {
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('fallback').classList.remove('hidden');
+                }
+            }, 3000);
+            
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    appOpened = true;
+                }
+            });
+        }
+        
+        tryOpenApp();
+        
+        window.addEventListener('load', () => {
+            setTimeout(tryOpenApp, 500);
+        });
+    </script>
+</body>
+</html>
+`
+
 type PageData struct {
 	FileName string
 	FileSize string
@@ -294,16 +449,21 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// Parse template
+	// Parse templates
 	tmpl, err := template.New("index").Parse(indexHTML)
 	if err != nil {
-		log.Fatal("Error parsing template:", err)
+		log.Fatal("Error parsing index template:", err)
+	}
+
+	openAppTmpl, err := template.New("openApp").Parse(openAppHTML)
+	if err != nil {
+		log.Fatal("Error parsing open-app template:", err)
 	}
 
 	// APK file path - change this to your APK file path
 	apkPath := "./hyperchat.apk"
 
-	// Home page
+	// Home page (unchanged)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		// Get file info
 		fileInfo, err := os.Stat(apkPath)
@@ -329,12 +489,21 @@ func main() {
 		}
 	})
 
-	// Download endpoint
+	// NEW: App opener route
+	r.Get("/open-app", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		if err := openAppTmpl.Execute(w, nil); err != nil {
+			http.Error(w, "Error rendering open-app template", http.StatusInternalServerError)
+			return
+		}
+	})
+
+	// Download endpoint (unchanged)
 	r.Get("/download", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "https://drive.google.com/drive/folders/1q3ELPL61wIZ-FOHCptv8Cw7z5cR6W_UI", http.StatusFound)
 	})
 
-	// Health check
+	// Health check (unchanged)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
